@@ -317,7 +317,7 @@ class MapboxMapController extends ChangeNotifier {
   ///
   /// The returned [Future] completes with the added symbol once listeners have
   /// been notified.
-  Future<Symbol> addSymbol(SymbolOptions options, [Map data]) async {
+  Future<Symbol> _addSymbol(SymbolOptions options, [Map data]) async {
     final SymbolOptions effectiveOptions =
         SymbolOptions.defaultOptions.copyWith(options);
     final String symbolId = await _channel.invokeMethod(
@@ -328,8 +328,33 @@ class MapboxMapController extends ChangeNotifier {
     );
     final Symbol symbol = Symbol(symbolId, effectiveOptions, data);
     _symbols[symbolId] = symbol;
+    return symbol;
+  }
+
+  /// Adds a symbol to the map, configured using the specified custom [options].
+  ///
+  /// Change listeners are notified once the symbol has been added on the
+  /// platform side.
+  ///
+  /// The returned [Future] completes with the added symbol once listeners have
+  /// been notified.
+  Future<Symbol> addSymbol(SymbolOptions options, [Map data]) async {
+    var symbol = await _addSymbol(options, data);
     notifyListeners();
     return symbol;
+  }
+
+  Future<List<Symbol>> addSymbols(List<SymbolOptions> options,
+      [Map data]) async {
+    var symbols = List<Symbol>();
+
+    for (var i in options) {
+      var symbol = await _addSymbol(i, data);
+      symbols.add(symbol);
+    }
+
+    notifyListeners();
+    return symbols;
   }
 
   /// Updates the specified [symbol] with the given [changes]. The symbol must
